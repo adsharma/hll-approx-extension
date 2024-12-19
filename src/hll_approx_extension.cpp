@@ -1,11 +1,16 @@
 #define DUCKDB_EXTENSION_MAIN
 
 #include "hll_approx_extension.hpp"
+
+#include "approx_functions.hpp"
 #include "duckdb.hpp"
 #include "duckdb/common/exception.hpp"
 #include "duckdb/common/string_util.hpp"
+#include "duckdb/function/aggregate_function.hpp"
 #include "duckdb/function/scalar_function.hpp"
 #include "duckdb/main/extension_util.hpp"
+
+#include <duckdb/parser/parsed_data/create_aggregate_function_info.hpp>
 #include <duckdb/parser/parsed_data/create_scalar_function_info.hpp>
 
 // OpenSSL linked through vcpkg
@@ -13,35 +18,17 @@
 
 namespace duckdb {
 
-inline void HllApproxScalarFun(DataChunk &args, ExpressionState &state, Vector &result) {
-    auto &name_vector = args.data[0];
-    UnaryExecutor::Execute<string_t, string_t>(
-	    name_vector, result, args.size(),
-	    [&](string_t name) {
-			return StringVector::AddString(result, "HllApprox "+name.GetString()+" 🐥");;
-        });
-}
-
-inline void HllApproxOpenSSLVersionScalarFun(DataChunk &args, ExpressionState &state, Vector &result) {
-    auto &name_vector = args.data[0];
-    UnaryExecutor::Execute<string_t, string_t>(
-	    name_vector, result, args.size(),
-	    [&](string_t name) {
-			return StringVector::AddString(result, "HllApprox " + name.GetString() +
-                                                     ", my linked OpenSSL version is " +
-                                                     OPENSSL_VERSION_TEXT );;
-        });
+static void RegisterAggregateFunction(DatabaseInstance &db, const char *name, AggregateFunction fun) {
+	// aggregate function
+	AggregateFunctionSet result;
+	result.AddFunction(fun);
+	result.name = name;
+	ExtensionUtil::RegisterFunction(db, std::move(result));
 }
 
 static void LoadInternal(DatabaseInstance &instance) {
-    // Register a scalar function
-    auto hll_approx_scalar_function = ScalarFunction("hll_approx", {LogicalType::VARCHAR}, LogicalType::VARCHAR, HllApproxScalarFun);
-    ExtensionUtil::RegisterFunction(instance, hll_approx_scalar_function);
-
-    // Register another scalar function
-    auto hll_approx_openssl_version_scalar_function = ScalarFunction("hll_approx_openssl_version", {LogicalType::VARCHAR},
-                                                LogicalType::VARCHAR, HllApproxOpenSSLVersionScalarFun);
-    ExtensionUtil::RegisterFunction(instance, hll_approx_openssl_version_scalar_function);
+	RegisterAggregateFunction(instance, "approx_count_distinct", hll_approx::ApproxCountDistinctFun::GetFunction());
+	ExtensionUtil::RegisterFunction(instance, hll_approx::ApproxQuantileFun::GetFunctions());
 }
 
 void HllApproxExtension::Load(DuckDB &db) {
@@ -64,8 +51,8 @@ std::string HllApproxExtension::Version() const {
 extern "C" {
 
 DUCKDB_EXTENSION_API void hll_approx_init(duckdb::DatabaseInstance &db) {
-    duckdb::DuckDB db_wrapper(db);
-    db_wrapper.LoadExtension<duckdb::HllApproxExtension>();
+	duckdb::DuckDB db_wrapper(db);
+	db_wrapper.LoadExtension<duckdb::HllApproxExtension>();
 }
 
 DUCKDB_EXTENSION_API const char *hll_approx_version() {
