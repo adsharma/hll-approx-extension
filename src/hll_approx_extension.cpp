@@ -27,7 +27,8 @@ static void RegisterAggregateFunction(DatabaseInstance &db, const char *name, Ag
 }
 
 static void LoadInternal(DatabaseInstance &instance) {
-	RegisterAggregateFunction(instance, "approx_count_distinct", hll_approx::ApproxCountDistinctFun::GetFunction());
+	RegisterAggregateFunction(instance, hll_approx::ApproxCountDistinctFun::Name,
+	                          hll_approx::ApproxCountDistinctFun::GetFunction());
 	ExtensionUtil::RegisterFunction(instance, hll_approx::ApproxQuantileFun::GetFunctions());
 }
 

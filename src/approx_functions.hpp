@@ -17,19 +17,19 @@ namespace duckdb {
 namespace hll_approx {
 
 struct ApproxQuantileFun {
-	static constexpr const char *Name = "approx_quantile";
+	static constexpr const char *Name = "hll_approx_quantile";
 	static constexpr const char *Parameters = "x,pos";
 	static constexpr const char *Description = "Computes the approximate quantile using T-Digest.";
-	static constexpr const char *Example = "approx_quantile(x, 0.5)";
+	static constexpr const char *Example = "hll_approx_quantile(x, 0.5)";
 
 	static AggregateFunctionSet GetFunctions();
 };
 
 struct ApproxCountDistinctFun {
-	static constexpr const char *Name = "approx_count_distinct";
+	static constexpr const char *Name = "hll_approx_count_distinct";
 	static constexpr const char *Parameters = "any";
 	static constexpr const char *Description = "Computes the approximate count of distinct elements using HyperLogLog.";
-	static constexpr const char *Example = "approx_count_distinct(A)";
+	static constexpr const char *Example = "hll_approx_count_distinct(A)";
 
 	static AggregateFunction GetFunction();
 };
